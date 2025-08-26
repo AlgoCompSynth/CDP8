@@ -1,4 +1,4 @@
-FROM docker.io/library/ubuntu:jammy
+FROM docker.io/library/ubuntu:24.04
 LABEL org.opencontainers.image.authors="znmeb@algocompsynth.com"
 
 ENV DEBIAN_FRONTEND=noninteractive
