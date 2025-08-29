@@ -1,14 +1,15 @@
-FROM docker.io/library/ubuntu:24.04
+FROM docker.io/library/ubuntu:noble
 LABEL org.opencontainers.image.authors="znmeb@algocompsynth.com"
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV SYS_LOGFILES=/logfiles
 ENV CDP8_HOME=/home/CDP8
 ENV LOGFILES=$CDP8_HOME/logfiles
-ENV CDP8_URL="--branch CDP8.0 https://github.com/ComposersDesktop/CDP8.git"
+ENV CDP8_URL="--branch main https://github.com/ComposersDesktop/CDP8.git"
 ENV CDP8_REPO="$CDP8_HOME/CDP8"
+#ENV PORTAUDIO_TARBALL="pa_snapshot.tgz"
 ENV PORTAUDIO_TARBALL="pa_stable_v190700_20210406.tgz"
-ENV PORTAUDIO_URL="https://files.portaudio.com/archives/$PORTAUDIO_TARBALL"
+ENV PORTAUDIO_URL="https://files.portaudio.com/archives"
 ENV PORTAUDIO_PATH="$CDP8_HOME/portaudio"
 
 # Linux dependencies and source code
@@ -58,17 +59,17 @@ RUN mkdir --parents $LOGFILES \
 
 # install portaudio
 WORKDIR $CDP8_HOME
-RUN wget --quiet $PORTAUDIO_URL \
+RUN wget --quiet $PORTAUDIO_URL/$PORTAUDIO_TARBALL \
   > $LOGFILES/portaudio.log 2>&1
 RUN tar xf $PORTAUDIO_TARBALL \
   >> $LOGFILES/portaudio.log 2>&1
 WORKDIR $PORTAUDIO_PATH
-RUN ./configure --with-alsa --with-jack
-  #>> $LOGFILES/portaudio.log 2>&1
-RUN make
-  #>> $LOGFILES/portaudio.log 2>&1
-RUN sudo make install
-  #>> $LOGFILES/portaudio.log 2>&1
+RUN ./configure --with-alsa --with-jack \
+  >> $LOGFILES/portaudio.log 2>&1
+RUN make \
+  >> $LOGFILES/portaudio.log 2>&1
+RUN sudo make install \
+  >> $LOGFILES/portaudio.log 2>&1
 
 # clone CDP8
 WORKDIR $CDP8_HOME
@@ -80,25 +81,27 @@ WORKDIR $CDP8_REPO/libaaio
 RUN tar xf libaaio-0.3.1.tar.bz2 \
   > $LOGFILES/libaaio.log 2>&1
 WORKDIR $CDP8_REPO/libaaio/libaaio-0.3.1
-RUN ./configure
-  #>> $LOGFILES/libaaio.log 2>&1
-RUN make
-  #>> $LOGFILES/libaaio.log 2>&1
-RUN sudo make install
-  #>> $LOGFILES/libaaio.log 2>&1
-RUN sudo /sbin/ldconfig --verbose
-  #>> $LOGFILES/libaaio.log 2>&1
+RUN ./configure \
+  >> $LOGFILES/libaaio.log 2>&1
+RUN make \
+  >> $LOGFILES/libaaio.log 2>&1
+RUN sudo make install \
+  >> $LOGFILES/libaaio.log 2>&1
+RUN sudo /sbin/ldconfig --verbose \
+  >> $LOGFILES/libaaio.log 2>&1
 
 # install CDP8
 WORKDIR $CDP8_REPO
 RUN mkdir build
 WORKDIR $CDP8_REPO/build
-RUN cmake ..
-  #2>&1 | tee $LOGFILES/CDP8.log
-RUN make
-  #2>&1 | tee --append $LOGFILES/CDP8.log
-RUN sudo make install
-  #2>&1 | tee --append $LOGFILES/CDP8.log
+RUN cmake .. \
+  > $LOGFILES/CDP8.log 2>&1
+ENV CPATH=$PORTAUDIO_PATH/src/common
+ENV VERBOSE=1
+RUN make \
+  > $LOGFILES/CDP8.log 2>&1
+RUN sudo make install \
+  > $LOGFILES/CDP8.log 2>&1
 
 WORKDIR $CDP8_HOME
 
